@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading WebSocket Test</title>
+</head>
+
+<body>
+
+<h2>Live Trades</h2>
+
+<div id="trades"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<script>
+
+    const socket = new SockJS("http://localhost:8080/ws");
+    const stomp = Stomp.over(socket);
+
+    stomp.connect({}, function () {
+
+        console.log("Connected to WebSocket");
+
+        // Subscribe to TCS trades
+        stomp.subscribe("/topic/trades/TCS", function (message) {
+
+            const trade = JSON.parse(message.body);
+
+            const div = document.getElementById("trades");
+
+            const p = document.createElement("p");
+
+            p.innerText =
+                "TRADE → " +
+                trade.quantity +
+                " " +
+                trade.stockSymbol +
+                " @ " +
+                trade.price;
+
+            div.prepend(p);
+        });
+
+    });
+
+</script>
+
+</body>
+</html>
