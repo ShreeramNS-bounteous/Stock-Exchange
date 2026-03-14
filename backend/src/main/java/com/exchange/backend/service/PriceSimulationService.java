@@ -18,6 +18,7 @@ public class PriceSimulationService {
 
     private final StockRepository stockRepository;
     private final PriceHistoryRepository priceHistoryRepository;
+    private final MarketService marketService;
 
     private final Random random = new Random();
 
@@ -26,6 +27,10 @@ public class PriceSimulationService {
      */
     @Scheduled(fixedRate = 3000)
     public void simulatePriceMovement() {
+        // ✅ stop price updates if market closed
+        if (!marketService.isMarketOpen()) {
+            return;
+        }
 
         List<Stock> stocks = stockRepository.findAll();
 

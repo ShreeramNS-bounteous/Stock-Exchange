@@ -8,7 +8,7 @@ import java.time.LocalTime;
 public class MarketService {
 
     private static final LocalTime MARKET_OPEN = LocalTime.of(9, 15);
-    private static final LocalTime MARKET_CLOSE = LocalTime.of(15, 30);
+    private static final LocalTime MARKET_CLOSE = LocalTime.of(23, 30);
 
     public boolean isMarketOpen() {
 

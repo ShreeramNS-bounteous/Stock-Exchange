@@ -8,6 +8,7 @@ import com.exchange.backend.repository.PortfolioRepository;
 import com.exchange.backend.repository.TradeRepository;
 import com.exchange.backend.repository.TransactionRepository;
 import com.exchange.backend.repository.UserRepository;
+import com.exchange.backend.service.MarketService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ public class MatchingEngine {
     private final PortfolioRepository portfolioRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final MarketService marketService;
 
     @PostConstruct
     public void startEngine() {
@@ -35,6 +37,7 @@ public class MatchingEngine {
                 Order order = orderQueue.pollOrder();
 
                 if (order != null) {
+                    System.out.println("ENGINE RECEIVED ORDER → " + order.getType() + " " + order.getStockSymbol());
                     processOrder(order);
                 }
 
@@ -57,6 +60,8 @@ public class MatchingEngine {
             matchSellOrder(order);
         }
 
+        System.out.println("BUY BOOK SIZE → " + orderBook.getBuyOrders().size());
+        System.out.println("SELL BOOK SIZE → " + orderBook.getSellOrders().size());
     }
 
     private void matchBuyOrder(Order buyOrder) {
@@ -163,6 +168,13 @@ public class MatchingEngine {
 
         portfolio.setQuantity(portfolio.getQuantity() + tradeQty);
         portfolioRepository.save(portfolio);
+
+        Portfolio sellerPortfolio = portfolioRepository
+                .findByUserAndStockSymbol(seller, stock)
+                .orElseThrow();
+
+        sellerPortfolio.setQuantity(sellerPortfolio.getQuantity() - tradeQty);
+        portfolioRepository.save(sellerPortfolio);
 
         // Save buyer transaction
         transactionRepository.save(
