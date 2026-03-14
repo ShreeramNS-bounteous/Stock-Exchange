@@ -31,7 +31,6 @@ public class PriceSimulationService {
         if (!marketService.isMarketOpen()) {
             return;
         }
-
         List<Stock> stocks = stockRepository.findAll();
 
         for (Stock stock : stocks) {
