@@ -8,6 +8,7 @@ import com.exchange.backend.repository.PortfolioRepository;
 import com.exchange.backend.repository.TradeRepository;
 import com.exchange.backend.repository.TransactionRepository;
 import com.exchange.backend.repository.UserRepository;
+import com.exchange.backend.repository.OrderRepository;
 import com.exchange.backend.service.MarketService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,21 @@ public class MatchingEngine {
     private final PortfolioRepository portfolioRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
-    private final MarketService marketService;
+    private final OrderRepository orderRepository;
+
+
+    @PostConstruct
+    public void rebuildOrderBook() {
+
+        System.out.println("Rebuilding OrderBook from DB...");
+
+        orderRepository.findAll()
+                .stream()
+                .filter(order -> order.getStatus() == OrderStatus.PENDING)
+                .forEach(order -> orderBook.addOrder(order));
+
+        System.out.println("OrderBook restored from database.");
+    }
 
     @PostConstruct
     public void startEngine() {
