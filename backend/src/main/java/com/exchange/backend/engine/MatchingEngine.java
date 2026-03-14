@@ -10,7 +10,6 @@ import com.exchange.backend.repository.TradeRepository;
 import com.exchange.backend.repository.TransactionRepository;
 import com.exchange.backend.repository.UserRepository;
 import com.exchange.backend.repository.OrderRepository;
-import com.exchange.backend.service.MarketService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,7 +20,6 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class MatchingEngine {
 
-    private final OrderQueue orderQueue;
     private final OrderBook orderBook;
     private final TradeRepository tradeRepository;
     private final PortfolioRepository portfolioRepository;
@@ -30,6 +28,10 @@ public class MatchingEngine {
     private final OrderRepository orderRepository;
 
 
+    /**
+     * Rebuilds the in-memory OrderBook from database on startup.
+     * Only PENDING orders are restored.
+     */
     @PostConstruct
     public void rebuildOrderBook() {
 
@@ -38,33 +40,17 @@ public class MatchingEngine {
         orderRepository.findAll()
                 .stream()
                 .filter(order -> order.getStatus() == OrderStatus.PENDING)
-                .forEach(order -> orderBook.addOrder(order));
+                .forEach(orderBook::addOrder);
 
         System.out.println("OrderBook restored from database.");
     }
 
-    @PostConstruct
-    public void startEngine() {
 
-        Thread engineThread = new Thread(() -> {
-
-            while (true) {
-
-                Order order = orderQueue.pollOrder();
-
-                if (order != null) {
-                    System.out.println("ENGINE RECEIVED ORDER → " + order.getType() + " " + order.getStockSymbol());
-                    processOrder(order);
-                }
-            }
-
-        });
-
-        engineThread.setName("Matching-Engine");
-        engineThread.start();
-    }
-
-    private void processOrder(Order order) {
+    /**
+     * Entry point called by MatchingEngineManager threads.
+     * Each symbol has its own engine thread.
+     */
+    public void processOrder(Order order) {
 
         if (order.getType() == OrderType.BUY) {
             matchBuyOrder(order);
@@ -73,12 +59,15 @@ public class MatchingEngine {
         }
 
         System.out.println("BUY BOOK SIZE → " + orderBook.getBuyOrders(order.getStockSymbol()).size());
-
         System.out.println("SELL BOOK SIZE → " + orderBook.getSellOrders(order.getStockSymbol()).size());
 
         orderBook.printOrderBook(order.getStockSymbol());
     }
 
+
+    /**
+     * Matches BUY orders with SELL orders using price-time priority.
+     */
     private void matchBuyOrder(Order buyOrder) {
 
         var sellQueue = orderBook.getSellOrders(buyOrder.getStockSymbol());
@@ -87,7 +76,12 @@ public class MatchingEngine {
 
             Order sellOrder = sellQueue.peek();
 
-            if (buyOrder.getPrice() < sellOrder.getPrice()) {
+            /**
+             * LIMIT BUY orders must satisfy price condition.
+             * MARKET BUY orders skip this check and match immediately.
+             */
+            if (buyOrder.getOrderMode() == OrderMode.LIMIT &&
+                    buyOrder.getPrice() < sellOrder.getPrice()) {
                 break;
             }
 
@@ -102,10 +96,19 @@ public class MatchingEngine {
             }
         }
 
+        /**
+         * If BUY order still has remaining quantity,
+         * add it to the OrderBook.
+         */
         orderBook.addOrder(buyOrder);
 
         orderBook.printOrderBook(buyOrder.getStockSymbol());
     }
+
+
+    /**
+     * Matches SELL orders with BUY orders using price-time priority.
+     */
     private void matchSellOrder(Order sellOrder) {
 
         var buyQueue = orderBook.getBuyOrders(sellOrder.getStockSymbol());
@@ -114,7 +117,12 @@ public class MatchingEngine {
 
             Order buyOrder = buyQueue.peek();
 
-            if (buyOrder.getPrice() < sellOrder.getPrice()) {
+            /**
+             * LIMIT SELL orders must satisfy price condition.
+             * MARKET SELL orders skip this check.
+             */
+            if (sellOrder.getOrderMode() == OrderMode.LIMIT &&
+                    buyOrder.getPrice() < sellOrder.getPrice()) {
                 break;
             }
 
@@ -129,19 +137,44 @@ public class MatchingEngine {
             }
         }
 
+        /**
+         * Remaining SELL quantity goes to orderbook
+         */
         orderBook.addOrder(sellOrder);
 
         orderBook.printOrderBook(sellOrder.getStockSymbol());
     }
 
+
+    /**
+     * Executes trade between BUY and SELL order.
+     * Handles:
+     * - trade creation
+     * - portfolio update
+     * - balance update
+     * - transaction ledger
+     * - order status update
+     */
     private void executeTrade(Order buyOrder, Order sellOrder) {
 
         int tradeQty = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
+
+        /**
+         * Determine execution price.
+         * MARKET orders execute at resting order price.
+         */
         double price;
 
-        if (buyOrder.getCreatedAt().isBefore(sellOrder.getCreatedAt())) {
+        if (buyOrder.getOrderMode() == OrderMode.MARKET) {
+            price = sellOrder.getPrice();
+        }
+        else if (sellOrder.getOrderMode() == OrderMode.MARKET) {
             price = buyOrder.getPrice();
-        } else {
+        }
+        else if (buyOrder.getCreatedAt().isBefore(sellOrder.getCreatedAt())) {
+            price = buyOrder.getPrice();
+        }
+        else {
             price = sellOrder.getPrice();
         }
 
@@ -151,7 +184,9 @@ public class MatchingEngine {
         String stock = buyOrder.getStockSymbol();
         double amount = tradeQty * price;
 
-        // Fetch Users
+        /**
+         * Fetch buyer and seller
+         */
         User buyer = userRepository.findById(buyOrder.getUserId()).orElseThrow();
         User seller = userRepository.findById(sellOrder.getUserId()).orElseThrow();
 
@@ -164,7 +199,9 @@ public class MatchingEngine {
                         + " Seller:" + seller.getId()
         );
 
-        // Save Trade
+        /**
+         * Save trade record
+         */
         Trade trade = Trade.builder()
                 .buyer(buyer)
                 .seller(seller)
@@ -176,13 +213,18 @@ public class MatchingEngine {
 
         tradeRepository.save(trade);
 
+        /**
+         * Credit seller balance
+         */
         seller.setBalance(seller.getBalance() + amount);
         userRepository.save(seller);
 
         userRepository.save(buyer);
         userRepository.save(seller);
 
-        // Update portfolio
+        /**
+         * Update buyer portfolio
+         */
         Portfolio portfolio = portfolioRepository
                 .findByUserAndStockSymbol(buyer, stock)
                 .orElse(
@@ -196,8 +238,9 @@ public class MatchingEngine {
         portfolio.setQuantity(portfolio.getQuantity() + tradeQty);
         portfolioRepository.save(portfolio);
 
-
-        // Save buyer transaction
+        /**
+         * Record buyer debit transaction
+         */
         transactionRepository.save(
                 Transaction.builder()
                         .user(buyer)
@@ -207,7 +250,9 @@ public class MatchingEngine {
                         .build()
         );
 
-        // Save seller transaction
+        /**
+         * Record seller credit transaction
+         */
         transactionRepository.save(
                 Transaction.builder()
                         .user(seller)
@@ -217,6 +262,9 @@ public class MatchingEngine {
                         .build()
         );
 
+        /**
+         * Update order status when fully filled
+         */
         if (buyOrder.getQuantity() == 0)
             buyOrder.setStatus(OrderStatus.EXECUTED);
 
