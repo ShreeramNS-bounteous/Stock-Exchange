@@ -1,5 +1,6 @@
 package com.exchange.backend.engine;
 
+import com.exchange.backend.enums.OrderMode;
 import com.exchange.backend.enums.OrderStatus;
 import com.exchange.backend.enums.OrderType;
 import com.exchange.backend.enums.TransactionType;
@@ -8,6 +9,7 @@ import com.exchange.backend.repository.PortfolioRepository;
 import com.exchange.backend.repository.TradeRepository;
 import com.exchange.backend.repository.TransactionRepository;
 import com.exchange.backend.repository.UserRepository;
+import com.exchange.backend.repository.OrderRepository;
 import com.exchange.backend.service.MarketService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,21 @@ public class MatchingEngine {
     private final PortfolioRepository portfolioRepository;
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
-    private final MarketService marketService;
+    private final OrderRepository orderRepository;
+
+
+    @PostConstruct
+    public void rebuildOrderBook() {
+
+        System.out.println("Rebuilding OrderBook from DB...");
+
+        orderRepository.findAll()
+                .stream()
+                .filter(order -> order.getStatus() == OrderStatus.PENDING)
+                .forEach(order -> orderBook.addOrder(order));
+
+        System.out.println("OrderBook restored from database.");
+    }
 
     @PostConstruct
     public void startEngine() {
@@ -40,10 +56,6 @@ public class MatchingEngine {
                     System.out.println("ENGINE RECEIVED ORDER → " + order.getType() + " " + order.getStockSymbol());
                     processOrder(order);
                 }
-
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException ignored) {}
             }
 
         });
@@ -60,15 +72,20 @@ public class MatchingEngine {
             matchSellOrder(order);
         }
 
-        System.out.println("BUY BOOK SIZE → " + orderBook.getBuyOrders().size());
-        System.out.println("SELL BOOK SIZE → " + orderBook.getSellOrders().size());
+        System.out.println("BUY BOOK SIZE → " + orderBook.getBuyOrders(order.getStockSymbol()).size());
+
+        System.out.println("SELL BOOK SIZE → " + orderBook.getSellOrders(order.getStockSymbol()).size());
+
+        orderBook.printOrderBook(order.getStockSymbol());
     }
 
     private void matchBuyOrder(Order buyOrder) {
 
-        while (!orderBook.getSellOrders().isEmpty()) {
+        var sellQueue = orderBook.getSellOrders(buyOrder.getStockSymbol());
 
-            Order sellOrder = orderBook.getSellOrders().peek();
+        while (!sellQueue.isEmpty()) {
+
+            Order sellOrder = sellQueue.peek();
 
             if (buyOrder.getPrice() < sellOrder.getPrice()) {
                 break;
@@ -77,7 +94,7 @@ public class MatchingEngine {
             executeTrade(buyOrder, sellOrder);
 
             if (sellOrder.getQuantity() == 0) {
-                orderBook.getSellOrders().poll();
+                sellQueue.poll();
             }
 
             if (buyOrder.getQuantity() == 0) {
@@ -86,13 +103,16 @@ public class MatchingEngine {
         }
 
         orderBook.addOrder(buyOrder);
-    }
 
+        orderBook.printOrderBook(buyOrder.getStockSymbol());
+    }
     private void matchSellOrder(Order sellOrder) {
 
-        while (!orderBook.getBuyOrders().isEmpty()) {
+        var buyQueue = orderBook.getBuyOrders(sellOrder.getStockSymbol());
 
-            Order buyOrder = orderBook.getBuyOrders().peek();
+        while (!buyQueue.isEmpty()) {
+
+            Order buyOrder = buyQueue.peek();
 
             if (buyOrder.getPrice() < sellOrder.getPrice()) {
                 break;
@@ -101,7 +121,7 @@ public class MatchingEngine {
             executeTrade(buyOrder, sellOrder);
 
             if (buyOrder.getQuantity() == 0) {
-                orderBook.getBuyOrders().poll();
+                buyQueue.poll();
             }
 
             if (sellOrder.getQuantity() == 0) {
@@ -110,12 +130,20 @@ public class MatchingEngine {
         }
 
         orderBook.addOrder(sellOrder);
+
+        orderBook.printOrderBook(sellOrder.getStockSymbol());
     }
 
     private void executeTrade(Order buyOrder, Order sellOrder) {
 
         int tradeQty = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
-        double price = sellOrder.getPrice();
+        double price;
+
+        if (buyOrder.getCreatedAt().isBefore(sellOrder.getCreatedAt())) {
+            price = buyOrder.getPrice();
+        } else {
+            price = sellOrder.getPrice();
+        }
 
         buyOrder.setQuantity(buyOrder.getQuantity() - tradeQty);
         sellOrder.setQuantity(sellOrder.getQuantity() - tradeQty);
@@ -148,9 +176,8 @@ public class MatchingEngine {
 
         tradeRepository.save(trade);
 
-        // Update balances
-        buyer.setBalance(buyer.getBalance() - amount);
         seller.setBalance(seller.getBalance() + amount);
+        userRepository.save(seller);
 
         userRepository.save(buyer);
         userRepository.save(seller);
@@ -169,12 +196,6 @@ public class MatchingEngine {
         portfolio.setQuantity(portfolio.getQuantity() + tradeQty);
         portfolioRepository.save(portfolio);
 
-        Portfolio sellerPortfolio = portfolioRepository
-                .findByUserAndStockSymbol(seller, stock)
-                .orElseThrow();
-
-        sellerPortfolio.setQuantity(sellerPortfolio.getQuantity() - tradeQty);
-        portfolioRepository.save(sellerPortfolio);
 
         // Save buyer transaction
         transactionRepository.save(
@@ -201,5 +222,8 @@ public class MatchingEngine {
 
         if (sellOrder.getQuantity() == 0)
             sellOrder.setStatus(OrderStatus.EXECUTED);
+
+        orderRepository.save(buyOrder);
+        orderRepository.save(sellOrder);
     }
 }

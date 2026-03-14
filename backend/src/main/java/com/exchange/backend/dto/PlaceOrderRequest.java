@@ -17,5 +17,5 @@ public class PlaceOrderRequest {
 
     private int quantity;
 
-    private double price;
+    private Double price;
 }

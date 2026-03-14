@@ -3,18 +3,25 @@ package com.exchange.backend.engine;
 import com.exchange.backend.model.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @Component
 public class OrderQueue {
 
-    private final ConcurrentLinkedQueue<Order> queue = new ConcurrentLinkedQueue<>();
+    private final BlockingQueue<Order> queue = new LinkedBlockingQueue<>();
 
     public void addOrder(Order order) {
-        queue.add(order);
+        queue.offer(order);
     }
 
     public Order pollOrder() {
-        return queue.poll();
+
+        try {
+            return queue.take(); // blocks until order arrives
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
     }
 }
