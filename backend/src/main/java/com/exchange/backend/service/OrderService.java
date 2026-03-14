@@ -2,7 +2,8 @@ package com.exchange.backend.service;
 
 import com.exchange.backend.dto.PlaceOrderRequest;
 import com.exchange.backend.engine.OrderBook;
-import com.exchange.backend.engine.OrderQueue;
+
+import com.exchange.backend.engine.SymbolOrderRouter;
 import com.exchange.backend.enums.OrderMode;
 import com.exchange.backend.enums.OrderStatus;
 import com.exchange.backend.enums.OrderType;
@@ -22,7 +23,7 @@ import java.time.LocalDateTime;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderQueue orderQueue;
+    private final SymbolOrderRouter symbolOrderRouter;
     private final MarketService marketService;
     private final UserRepository userRepository;
     private final PortfolioRepository portfolioRepository;
@@ -84,7 +85,7 @@ public class OrderService {
 
         orderRepository.save(order);
 
-        orderQueue.addOrder(order);
+        symbolOrderRouter.routeOrder(order);
 
         System.out.println("Order queued → " + order.getId());
     }
