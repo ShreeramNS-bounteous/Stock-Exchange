@@ -1,12 +1,11 @@
 import { useEffect,useState } from "react"
 import { getOrderBook } from "../../api/marketApi"
 import { useMarketStore } from "../../store/marketStore"
-import { connectSocket } from "../../websocket/socket"
+import { connectSocket, disconnectSocket } from "../../websocket/socket"
 
 export default function OrderBook(){
 
  const symbol = useMarketStore(s=>s.symbol)
-
  const [book,setBook] = useState({buyOrders:[],sellOrders:[]})
 
  useEffect(()=>{
@@ -15,7 +14,11 @@ export default function OrderBook(){
 
   getOrderBook(symbol).then(res=>setBook(res.data))
 
-  connectSocket(symbol,()=>{},(data)=>setBook(data))
+  disconnectSocket()
+
+  connectSocket(symbol,null,(data)=>setBook(data))
+
+  return ()=>disconnectSocket()
 
  },[symbol])
 

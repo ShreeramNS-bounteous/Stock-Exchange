@@ -5,32 +5,51 @@ let client = null
 
 export const connectSocket = (symbol, onTrade, onOrderBook) => {
 
+  // disconnect previous socket
+  if (client) {
+    client.deactivate()
+    client = null
+  }
+
   const socket = new SockJS("http://localhost:8080/ws")
 
   client = new Client({
-
     webSocketFactory: () => socket,
-
     reconnectDelay: 5000,
 
     onConnect: () => {
 
-      client.subscribe(`/topic/trades/${symbol}`, (msg) => {
-        onTrade(JSON.parse(msg.body))
-      })
+      console.log("WebSocket connected")
 
-      client.subscribe(`/topic/orderbook/${symbol}`, (msg) => {
-        onOrderBook(JSON.parse(msg.body))
-      })
+      if (onTrade) {
+        client.subscribe(`/topic/trades/${symbol}`, (msg) => {
+          onTrade(JSON.parse(msg.body))
+        })
+      }
 
+      if (onOrderBook) {
+        client.subscribe(`/topic/orderbook/${symbol}`, (msg) => {
+          onOrderBook(JSON.parse(msg.body))
+        })
+      }
+
+    },
+
+    onStompError: (frame) => {
+      console.error("WebSocket error", frame)
     }
 
   })
 
   client.activate()
-
 }
 
 export const disconnectSocket = () => {
-  if (client) client.deactivate()
+
+  if (client) {
+    client.deactivate()
+    client = null
+    console.log("WebSocket disconnected")
+  }
+
 }

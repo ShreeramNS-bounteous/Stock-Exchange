@@ -59,7 +59,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public  AuthResponse register(@RequestBody RegisterRequest request) {
+    public AuthResponse register(@RequestBody RegisterRequest request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("User already exists");
@@ -69,8 +69,10 @@ public class AuthController {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
-                .balance(100000.0) // starting demo balance
+                .balance(100000.0)
                 .build();
+
+        userRepository.save(user);
 
         String token = jwtService.generateToken(user.getEmail());
 

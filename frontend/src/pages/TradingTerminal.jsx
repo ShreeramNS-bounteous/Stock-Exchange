@@ -1,4 +1,4 @@
-import TradingLayout from "../layout/TradingLayout"
+import TradingLayout from "../layout/TradingLayot"
 
 import MarketWatch from "../components/market/MarketWatch"
 import TradingChart from "../components/chart/TradingChart"
