@@ -30,4 +30,22 @@ public class TradeService {
                 ))
                 .toList();
     }
+
+    public List<TradeResponse> getTradesBySymbol(String symbol) {
+
+        List<Trade> trades =
+                tradeRepository.findByStockSymbolOrderByTimestampDesc(symbol);
+
+        return trades.stream()
+                .map(t -> new TradeResponse(
+                        t.getId(),
+                        t.getStockSymbol(),
+                        t.getQuantity(),
+                        t.getPrice(),
+                        t.getBuyer().getId(),
+                        t.getSeller().getId(),
+                        t.getTimestamp()
+                ))
+                .toList();
+    }
 }

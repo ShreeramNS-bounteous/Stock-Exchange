@@ -40,6 +40,10 @@
                 trade.price;
 
             div.prepend(p);
+
+if (div.children.length > 100) {
+    div.removeChild(div.lastChild);
+}
         });
 
     });
