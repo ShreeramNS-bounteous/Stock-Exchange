@@ -80,4 +80,16 @@ public class AuthController {
                 user.getRole().name()
         );
     }
+
+    @GetMapping("/balance")
+    public BalanceResponse getBalance(Authentication authentication){
+
+        String email = authentication.getName();
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return new BalanceResponse(user.getBalance());
+    }
 }
