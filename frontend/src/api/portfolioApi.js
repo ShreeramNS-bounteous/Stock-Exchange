@@ -1,5 +1,4 @@
-import axiosClient from "./axios";
+import axiosClient from "./axios"
 
-export const getPortfolio = () => {
-  return axiosClient.get("/portfolio");
-};
+export const getPortfolio = () =>
+axiosClient.get("/portfolio")
