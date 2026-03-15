@@ -6,6 +6,7 @@
 //import com.exchange.backend.model.Stock;
 //import com.exchange.backend.repository.StockRepository;
 //import jakarta.annotation.PostConstruct;
+//import jakarta.annotation.PreDestroy;
 //import lombok.RequiredArgsConstructor;
 //import org.springframework.stereotype.Service;
 //
@@ -25,9 +26,11 @@
 //
 //    private List<String> symbols;
 //
-//    // These represent the market maker accounts
-//    // They are still normal USERs in DB
 //    private final Long[] simulatorUsers = {1L, 2L};
+//
+//    private ExecutorService executor;
+//
+//    private volatile boolean running = true;
 //
 //    @PostConstruct
 //    public void startSimulation() {
@@ -43,13 +46,13 @@
 //            throw new RuntimeException("No stocks found in database");
 //        }
 //
-//        ExecutorService executor = Executors.newFixedThreadPool(3);
+//        executor = Executors.newFixedThreadPool(3);
 //
 //        for (int i = 0; i < 3; i++) {
 //
 //            executor.submit(() -> {
 //
-//                while (true) {
+//                while (running) {
 //
 //                    try {
 //
@@ -58,19 +61,31 @@
 //                        Long simulatorUser =
 //                                simulatorUsers[random.nextInt(simulatorUsers.length)];
 //
-//                        // Pass userId separately
 //                        orderService.placeOrder(simulatorUser, request);
 //
 //                        Thread.sleep(800 + random.nextInt(800));
 //
-//                    } catch (Exception e) {
-//                        System.out.println("Simulator error: " + e.getMessage());
+//                    } catch (Exception ignored) {
+//                        // ignore validation errors
 //                    }
 //
 //                }
 //
 //            });
 //
+//        }
+//
+//    }
+//
+//    @PreDestroy
+//    public void stopSimulator() {
+//
+//        System.out.println("🛑 Stopping Trading Simulator");
+//
+//        running = false;
+//
+//        if (executor != null) {
+//            executor.shutdownNow();
 //        }
 //
 //    }
