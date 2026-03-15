@@ -9,14 +9,17 @@ import com.exchange.backend.model.*;
 import com.exchange.backend.repository.*;
 import com.exchange.backend.dto.TradeResponse;
 import com.exchange.backend.dto.OrderBookResponse;
-import com.exchange.backend.dto.OrderLevel;
 
+
+import com.exchange.backend.service.OrderBookService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 @RequiredArgsConstructor
@@ -29,6 +32,8 @@ public class MatchingEngine {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final EventPublisher eventPublisher;
+    private final OrderBookService orderBookService;
+    private static final Logger log = LoggerFactory.getLogger(MatchingEngine.class);
 
     /**
      * Rebuild in-memory orderbook from DB on startup
@@ -57,10 +62,10 @@ public class MatchingEngine {
             matchSellOrder(order);
         }
 
-        System.out.println("BUY BOOK SIZE → " + orderBook.getBuyOrders(order.getStockSymbol()).size());
-        System.out.println("SELL BOOK SIZE → " + orderBook.getSellOrders(order.getStockSymbol()).size());
-
-        orderBook.printOrderBook(order.getStockSymbol());
+//        System.out.println("BUY BOOK SIZE → " + orderBook.getBuyOrders(order.getStockSymbol()).size());
+//        System.out.println("SELL BOOK SIZE → " + orderBook.getSellOrders(order.getStockSymbol()).size());
+//
+//        orderBook.printOrderBook(order.getStockSymbol());
 
         /**
          * Broadcast updated orderbook
@@ -133,19 +138,26 @@ public class MatchingEngine {
      */
     private void executeTrade(Order buyOrder, Order sellOrder) {
 
+        if (buyOrder.getUserId().equals(sellOrder.getUserId())) {
+            System.out.println("Self trade prevented");
+            return;
+        }
+
         int tradeQty = Math.min(buyOrder.getQuantity(), sellOrder.getQuantity());
 
         double price;
 
+// MARKET BUY → take best SELL price
         if (buyOrder.getOrderMode() == OrderMode.MARKET) {
             price = sellOrder.getPrice();
         }
+
+// MARKET SELL → take best BUY price
         else if (sellOrder.getOrderMode() == OrderMode.MARKET) {
             price = buyOrder.getPrice();
         }
-        else if (buyOrder.getCreatedAt().isBefore(sellOrder.getCreatedAt())) {
-            price = buyOrder.getPrice();
-        }
+
+// LIMIT vs LIMIT → resting order price
         else {
             price = sellOrder.getPrice();
         }
@@ -159,14 +171,22 @@ public class MatchingEngine {
         User buyer = userRepository.findById(buyOrder.getUserId()).orElseThrow();
         User seller = userRepository.findById(sellOrder.getUserId()).orElseThrow();
 
-        System.out.println(
-                "TRADE EXECUTED → "
-                        + tradeQty + " "
-                        + stock
-                        + " @ " + price
-                        + " Buyer:" + buyer.getId()
-                        + " Seller:" + seller.getId()
-        );
+        // RISK CHECK
+        if (buyer.getBalance() < amount) {
+            System.out.println("Trade rejected: Buyer insufficient balance");
+            return;
+        }
+
+        Portfolio sellerPortfolio = portfolioRepository
+                .findByUserAndStockSymbol(seller, buyOrder.getStockSymbol())
+                .orElse(null);
+
+        if (sellerPortfolio == null || sellerPortfolio.getQuantity() < tradeQty) {
+            System.out.println("Trade rejected: Seller insufficient shares");
+            return;
+        }
+
+      log.info("TRADE EXECUTED → {} {} @ {}", tradeQty, stock, price);
 
         Trade trade = Trade.builder()
                 .buyer(buyer)
@@ -260,19 +280,7 @@ public class MatchingEngine {
      */
     private void publishOrderBookUpdate(String symbol) {
 
-        var buyQueue = orderBook.getBuyOrders(symbol);
-        var sellQueue = orderBook.getSellOrders(symbol);
-
-        List<OrderLevel> buys = buyQueue.stream()
-                .map(o -> new OrderLevel(o.getPrice(), o.getQuantity()))
-                .toList();
-
-        List<OrderLevel> sells = sellQueue.stream()
-                .map(o -> new OrderLevel(o.getPrice(), o.getQuantity()))
-                .toList();
-
-        OrderBookResponse response =
-                new OrderBookResponse(buys, sells);
+        OrderBookResponse response = orderBookService.getOrderBook(symbol);
 
         eventPublisher.publishOrderBookUpdated(symbol, response);
     }

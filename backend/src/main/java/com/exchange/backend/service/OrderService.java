@@ -29,16 +29,21 @@ public class OrderService {
     private final PortfolioRepository portfolioRepository;
     private final OrderBook orderBook;
 
-    public void placeOrder(PlaceOrderRequest request) {
+    public void placeOrder(Long userId, PlaceOrderRequest request) {
 
         if (!marketService.isMarketOpen()) {
             throw new RuntimeException("Order Rejected: Market is closed");
         }
 
-        User user = userRepository.findById(request.getUserId())
+        if (request.getQuantity() <= 0) {
+            throw new RuntimeException("Quantity must be positive");
+        }
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (request.getType() == OrderType.BUY) {
+        // BUY VALIDATION
+        if (request.getType() == OrderType.BUY && request.getOrderMode() == OrderMode.LIMIT) {
 
             double requiredAmount = request.getPrice() * request.getQuantity();
 
@@ -46,7 +51,6 @@ public class OrderService {
                 throw new RuntimeException("Insufficient balance for BUY order");
             }
 
-            // reserve money
             user.setBalance(user.getBalance() - requiredAmount);
             userRepository.save(user);
         }
@@ -62,18 +66,16 @@ public class OrderService {
                 throw new RuntimeException("Insufficient shares to sell");
             }
 
-            // reserve shares
             portfolio.setQuantity(portfolio.getQuantity() - request.getQuantity());
             portfolioRepository.save(portfolio);
         }
 
-        if(request.getOrderMode() == OrderMode.MARKET){
+        if (request.getOrderMode() == OrderMode.MARKET) {
             request.setPrice(0.0);
         }
 
-
         Order order = Order.builder()
-                .userId(request.getUserId())
+                .userId(userId)
                 .stockSymbol(request.getStockSymbol())
                 .type(request.getType())
                 .orderMode(request.getOrderMode())

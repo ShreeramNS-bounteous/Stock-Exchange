@@ -1,5 +1,6 @@
 package com.exchange.backend.model;
 
+import com.exchange.backend.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,4 +29,7 @@ public class User {
     private double balance;
 
     private double marginLimit;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 }
