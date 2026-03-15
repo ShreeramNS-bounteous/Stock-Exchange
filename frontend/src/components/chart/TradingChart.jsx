@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { createChart } from "lightweight-charts"
+import { createChart, CandlestickSeries } from "lightweight-charts"
 import { getCandles } from "../../api/marketApi"
 import { useMarketStore } from "../../store/marketStore"
 
@@ -14,7 +14,6 @@ export default function TradingChart() {
 
     if (!symbol || !ref.current) return
 
-    // destroy old chart
     if (chartRef.current) {
       chartRef.current.remove()
       chartRef.current = null
@@ -22,22 +21,14 @@ export default function TradingChart() {
 
     const chart = createChart(ref.current, {
       width: ref.current.clientWidth,
-      height: 400,
-      layout: {
-        background: { color: "#111827" },
-        textColor: "#DDD"
-      },
-      grid: {
-        vertLines: { color: "#1f2937" },
-        horzLines: { color: "#1f2937" }
-      }
+      height: 400
     })
 
     chartRef.current = chart
 
-    const candleSeries = chart.addCandlestickSeries()
+    const candleSeries = chart.addSeries(CandlestickSeries)
 
-    getCandles(symbol).then((res) => {
+    getCandles(symbol).then(res => {
       candleSeries.setData(res.data)
     })
 
@@ -51,5 +42,4 @@ export default function TradingChart() {
   }, [symbol])
 
   return <div ref={ref}></div>
-
 }
