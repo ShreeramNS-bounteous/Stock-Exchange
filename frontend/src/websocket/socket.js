@@ -1,55 +1,43 @@
 import SockJS from "sockjs-client"
-import { Client } from "@stomp/stompjs"
+import Stomp from "stompjs"
 
-let client = null
+let stompClient = null
 
-export const connectSocket = (symbol, onTrade, onOrderBook) => {
+export const connectSocket = () => {
 
-  // disconnect previous socket
-  if (client) {
-    client.deactivate()
-    client = null
-  }
+if(stompClient) return
 
-  const socket = new SockJS("http://localhost:8080/ws")
+const socket = new SockJS("http://localhost:8080/ws")
 
-  client = new Client({
-    webSocketFactory: () => socket,
-    reconnectDelay: 5000,
+stompClient = Stomp.over(socket)
 
-    onConnect: () => {
+stompClient.connect({}, () => {
 
-      console.log("WebSocket connected")
+console.log("WebSocket connected")
 
-      if (onTrade) {
-        client.subscribe(`/topic/trades/${symbol}`, (msg) => {
-          onTrade(JSON.parse(msg.body))
-        })
-      }
+})
 
-      if (onOrderBook) {
-        client.subscribe(`/topic/orderbook/${symbol}`, (msg) => {
-          onOrderBook(JSON.parse(msg.body))
-        })
-      }
+}
 
-    },
+export const subscribeTopic = (topic,callback) => {
 
-    onStompError: (frame) => {
-      console.error("WebSocket error", frame)
-    }
+if(!stompClient) return
 
-  })
+return stompClient.subscribe(topic,msg => {
 
-  client.activate()
+callback(JSON.parse(msg.body))
+
+})
+
 }
 
 export const disconnectSocket = () => {
 
-  if (client) {
-    client.deactivate()
-    client = null
-    console.log("WebSocket disconnected")
-  }
+if(stompClient){
+
+stompClient.disconnect()
+stompClient = null
+
+}
 
 }

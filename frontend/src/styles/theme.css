@@ -1,0 +1,79 @@
+:root{
+    --bg:#0b0f1a;
+    --panel:#111827;
+    --border:#1f2937;
+    
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    
+    --buy:#10b981;
+    --sell:#ef4444;
+    }
+    
+    body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Inter, Arial, sans-serif;
+    }
+
+    .navbar{
+
+        height:60px;
+        
+        background:#0f172a;
+        
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        
+        padding:0 20px;
+        
+        border-bottom:1px solid #1f2937;
+        
+        }
+        
+        .nav-left{
+        display:flex;
+        align-items:center;
+        gap:40px;
+        }
+        
+        .nav-links{
+        display:flex;
+        gap:20px;
+        color:#9ca3af;
+        }
+        
+        .nav-links span{
+        cursor:pointer;
+        }
+        
+        .nav-links span:hover{
+        color:white;
+        }
+        
+        .logo{
+        margin:0;
+        }
+        
+        .nav-right{
+        display:flex;
+        align-items:center;
+        gap:20px;
+        }
+        
+        .logout-btn{
+        
+        background:#ef4444;
+        border:none;
+        
+        padding:6px 12px;
+        border-radius:6px;
+        
+        color:white;
+        cursor:pointer;
+        
+        }
+
+        

@@ -1,0 +1,190 @@
+.terminal {
+  display: grid;
+
+  grid-template-columns: 260px 1fr 360px;
+  grid-template-rows: 420px 240px 260px;
+
+  gap: 12px;
+
+  height: calc(100vh - 60px);
+  padding: 12px;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: 10px;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+}
+
+.markets {
+  grid-row: 1 / span 3;
+  grid-column: 1;
+}
+
+.chart {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.orderpanel {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.orderbook {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.trades {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.orders {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.portfolio {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+.panel-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.market-row {
+  display: flex;
+  justify-content: space-between;
+
+  padding: 10px;
+
+  border-bottom: 1px solid var(--border);
+
+  cursor: pointer;
+}
+
+.market-row:hover {
+  background: #1f2937;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 8px;
+  color: #9ca3af;
+}
+
+.table td {
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.bid {
+  color: #10b981;
+}
+
+.ask {
+  color: #ef4444;
+}
+
+input,
+select {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+
+  background: #0b0f1a;
+  color: white;
+}
+
+input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.panel h3 {
+  margin: 0;
+  padding: 10px 12px;
+
+  border-bottom: 1px solid #1f2937;
+
+  font-size: 14px;
+
+  color: #9ca3af;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 8px;
+  color: #9ca3af;
+}
+
+.table td {
+  padding: 8px;
+  border-top: 1px solid #1f2937;
+}
+
+.table tr:hover {
+  background: #1f2937;
+}
+
+/* BUY / SELL BUTTONS */
+
+.buy-btn{
+
+    background:#10b981;
+    
+    border:none;
+    
+    padding:10px;
+    
+    border-radius:6px;
+    
+    color:white;
+    
+    cursor:pointer;
+    
+    }
+    
+    .sell-btn{
+    
+    background:#ef4444;
+    
+    border:none;
+    
+    padding:10px;
+    
+    border-radius:6px;
+    
+    color:white;
+    
+    cursor:pointer;
+    
+    }
+    
+    /* MARKET ROW HOVER */
+    
+    .market-row:hover{
+    background:#1f2937;
+    }

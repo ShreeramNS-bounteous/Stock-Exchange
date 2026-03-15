@@ -2,8 +2,8 @@ import { create } from "zustand"
 
 export const useMarketStore = create((set) => ({
 
-  symbol: null,
+symbol: "TCS",
 
-  setSymbol: (symbol) => set({ symbol })
+setSymbol: (symbol) => set({ symbol }),
 
 }))

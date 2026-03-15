@@ -1,28 +1,32 @@
 import { useState } from "react"
-import { login } from "../api/authApi"
+import { register } from "../api/authApi"
 import { useNavigate } from "react-router-dom"
 import "../styles/auth.css"
 
-export default function LoginPage(){
+export default function RegisterPage(){
 
  const navigate = useNavigate()
 
+ const [name,setName] = useState("")
  const [email,setEmail] = useState("")
  const [password,setPassword] = useState("")
 
- const handleLogin = async () => {
+ const handleRegister = async () => {
 
   try{
 
-   const res = await login({ email, password })
+   await register({
+    email,
+    password
+   })
 
-   localStorage.setItem("token",res.data.token)
+   alert("Registration successful")
 
    navigate("/trade")
 
   }catch(e){
 
-   alert("Login failed")
+   alert("Registration failed")
 
   }
 
@@ -34,8 +38,7 @@ export default function LoginPage(){
 
    <div className="auth-card">
 
-    <h2>Login</h2>
-
+    <h2>Register</h2>
     <input
      className="auth-input"
      placeholder="Email"
@@ -53,20 +56,20 @@ export default function LoginPage(){
 
     <button
      className="auth-btn"
-     onClick={handleLogin}
+     onClick={handleRegister}
     >
-     Login
+     Register
     </button>
 
     <p className="auth-footer">
 
-     Don't have an account?{" "}
+     Already have an account?{" "}
 
      <span
       className="auth-link"
-      onClick={()=>navigate("/register")}
+      onClick={()=>navigate("/login")}
      >
-      Register
+      Login
      </span>
 
     </p>
