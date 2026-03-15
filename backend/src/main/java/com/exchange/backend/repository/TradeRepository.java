@@ -6,4 +6,5 @@ import  java.util.List;
 
 public interface TradeRepository extends JpaRepository<Trade,Long> {
     List<Trade> findByStockSymbolOrderByTimestampDesc(String stockSymbol);
+    List<Trade> findByBuyerIdOrSellerId(Long buyerId, Long sellerId);
 }

@@ -1,5 +1,6 @@
 package com.exchange.backend.service;
 
+import com.exchange.backend.dto.CandleResponse;
 import com.exchange.backend.dto.OhlcResponse;
 import com.exchange.backend.model.PriceHistory;
 import com.exchange.backend.repository.PriceHistoryRepository;
@@ -50,6 +51,23 @@ public class MarketService {
                 .orElse(open);
 
         return new OhlcResponse(symbol, open, high, low, close);
+    }
+
+    public List<CandleResponse> getCandles(String symbol){
+
+        List<PriceHistory> prices =
+                priceHistoryRepository
+                        .findByStockSymbolOrderByRecordedAtAsc(symbol);
+
+        return prices.stream()
+                .map(p -> new CandleResponse(
+                        p.getRecordedAt().toEpochSecond(java.time.ZoneOffset.UTC),
+                        p.getPrice(),
+                        p.getPrice(),
+                        p.getPrice(),
+                        p.getPrice()
+                ))
+                .toList();
     }
 
 }

@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -142,5 +143,18 @@ public class OrderService {
         order.setStatus(OrderStatus.CANCELLED);
 
         orderRepository.save(order);
+    }
+
+    public List<Order> getOpenOrders(Long userId){
+
+        return orderRepository.findByUserIdAndStatus(
+                userId,
+                OrderStatus.PENDING
+        );
+    }
+
+    public List<Order> getOrderHistory(Long userId){
+
+        return orderRepository.findByUserId(userId);
     }
 }

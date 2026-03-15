@@ -48,4 +48,22 @@ public class TradeService {
                 ))
                 .toList();
     }
+
+    public List<TradeResponse> getUserTrades(Long userId){
+
+        List<Trade> trades =
+                tradeRepository.findByBuyerIdOrSellerId(userId, userId);
+
+        return trades.stream()
+                .map(t -> new TradeResponse(
+                        t.getId(),
+                        t.getStockSymbol(),
+                        t.getQuantity(),
+                        t.getPrice(),
+                        t.getBuyer().getId(),
+                        t.getSeller().getId(),
+                        t.getTimestamp()
+                ))
+                .toList();
+    }
 }

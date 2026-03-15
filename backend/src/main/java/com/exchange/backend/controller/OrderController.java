@@ -4,6 +4,7 @@ import com.exchange.backend.dto.OrderBookResponse;
 import com.exchange.backend.dto.PlaceOrderRequest;
 import com.exchange.backend.dto.PortfolioResponse;
 import com.exchange.backend.dto.TradeResponse;
+import com.exchange.backend.model.Order;
 import com.exchange.backend.model.User;
 import com.exchange.backend.repository.UserRepository;
 import com.exchange.backend.service.OrderBookService;
@@ -64,11 +65,18 @@ public class OrderController {
         return ResponseEntity.ok(tradeService.getAllTrades());
     }
 
-    @GetMapping("/portfolio/{userId}")
-    public ResponseEntity<List<PortfolioResponse>> getPortfolio(@PathVariable Long userId) {
+    @GetMapping("/portfolio")
+    public ResponseEntity<List<PortfolioResponse>> getMyPortfolio(
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         return ResponseEntity.ok(
-                portfolioService.getUserPortfolio(userId)
+                portfolioService.getUserPortfolio(user.getId())
         );
     }
 
@@ -78,6 +86,52 @@ public class OrderController {
 
         return ResponseEntity.ok(
                 tradeService.getTradesBySymbol(symbol)
+        );
+    }
+
+    @GetMapping("/orders/my")
+    public ResponseEntity<List<Order>> getMyOpenOrders(
+            Authentication authentication){
+
+        String email = authentication.getName();
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ResponseEntity.ok(
+                orderService.getOpenOrders(user.getId())
+        );
+    }
+
+
+    @GetMapping("/orders/history")
+    public ResponseEntity<List<Order>> getOrderHistory(
+            Authentication authentication){
+
+        String email = authentication.getName();
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ResponseEntity.ok(
+                orderService.getOrderHistory(user.getId())
+        );
+    }
+
+    @GetMapping("/trades/my")
+    public ResponseEntity<List<TradeResponse>> getMyTrades(
+            Authentication authentication){
+
+        String email = authentication.getName();
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ResponseEntity.ok(
+                tradeService.getUserTrades(user.getId())
         );
     }
 
