@@ -1,54 +1,54 @@
 import { useEffect,useState } from "react"
 import { getTrades } from "../../api/marketApi"
 import { useMarketStore } from "../../store/marketStore"
-import { connectSocket, disconnectSocket } from "../../websocket/socket"
 
 export default function TradeFeed(){
 
- const symbol = useMarketStore(s=>s.symbol)
- const [trades,setTrades] = useState([])
+const symbol = useMarketStore(s=>s.symbol)
 
- useEffect(()=>{
+const [trades,setTrades] = useState([])
 
-  if(!symbol) return
+useEffect(()=>{
 
-  getTrades(symbol).then(res=>setTrades(res.data))
+    if(!symbol) return
+    
+    getTrades(symbol).then(res=>setTrades(res.data))
+    
+    disconnectSocket()
+    
+    connectSocket(symbol,(trade)=>{
+    
+    setTrades(prev=>[trade,...prev.slice(0,40)])
+    
+    })
+    
+    return ()=>disconnectSocket()
+    
+    },[symbol])
 
-  disconnectSocket()
+return(
 
-  connectSocket(symbol,(trade)=>{
+<div>
 
-   setTrades(prev=>[trade,...prev.slice(0,40)])
+<h3>TRADES</h3>
 
-  })
+<table>
 
-  return ()=>disconnectSocket()
+<tbody>
 
- },[symbol])
+{trades.map(t=>(
+<tr key={t.tradeId}>
+<td>{t.price}</td>
+<td>{t.quantity}</td>
+</tr>
+))}
 
- return(
+</tbody>
 
-  <div className="text-white h-full flex flex-col">
+</table>
 
-   <div className="p-2 border-b border-gray-800 text-sm font-semibold">
-     TRADES
-   </div>
+</div>
 
-   <div className="flex-1 overflow-auto text-sm">
-
-    {trades.map(t=>(
-     <div key={t.tradeId} className="flex justify-between px-2 py-1">
-
-       <span>{t.price.toFixed(2)}</span>
-       <span>{t.quantity}</span>
-
-     </div>
-    ))}
-
-   </div>
-
-  </div>
-
- )
+)
 
 }

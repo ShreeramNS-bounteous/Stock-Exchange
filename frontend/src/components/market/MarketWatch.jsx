@@ -1,52 +1,47 @@
-import { useEffect, useState } from "react"
+import { useEffect,useState } from "react"
 import { getStocks } from "../../api/marketApi"
 import { useMarketStore } from "../../store/marketStore"
 
-export default function MarketWatch() {
+export default function MarketWatch(){
 
-  const [stocks,setStocks] = useState([])
-  const setSymbol = useMarketStore(s=>s.setSymbol)
+const [stocks,setStocks] = useState([])
 
-  useEffect(()=>{
+const setSymbol = useMarketStore(s=>s.setSymbol)
 
-    getStocks().then(res=>{
+useEffect(()=>{
 
-      setStocks(res.data)
+getStocks().then(res=>{
 
-      if(res.data.length>0){
-        setSymbol(res.data[0].symbol)
-      }
+setStocks(res.data)
 
-    })
+if(res.data.length>0)
+setSymbol(res.data[0].symbol)
 
-  },[])
+})
 
-  return(
+},[])
 
-    <div className="h-full overflow-y-auto text-white border-r border-gray-800">
+return(
 
-      <div className="p-3 font-semibold text-sm border-b border-gray-800">
-        MARKETS
-      </div>
+<div>
 
-      {stocks.map(stock=>(
-        <div
-          key={stock.symbol}
-          onClick={()=>setSymbol(stock.symbol)}
-          className="flex justify-between p-3 text-sm hover:bg-gray-800 cursor-pointer"
-        >
+<h3 style={{padding:"10px"}}>MARKETS</h3>
 
-          <span>{stock.symbol}</span>
+{stocks.map(s=>(
+<div
+key={s.symbol}
+className="market-row"
+onClick={()=>setSymbol(s.symbol)}
+>
 
-          <span className="text-gray-300">
-            ₹{stock.price?.toFixed(2)}
-          </span>
+<span>{s.symbol}</span>
+<span>₹{s.price?.toFixed(2)}</span>
 
-        </div>
-      ))}
+</div>
+))}
 
-    </div>
+</div>
 
-  )
+)
 
 }

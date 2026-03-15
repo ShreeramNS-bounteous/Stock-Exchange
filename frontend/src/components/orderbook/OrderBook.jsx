@@ -1,55 +1,51 @@
 import { useEffect,useState } from "react"
 import { getOrderBook } from "../../api/marketApi"
 import { useMarketStore } from "../../store/marketStore"
-import { connectSocket, disconnectSocket } from "../../websocket/socket"
 
 export default function OrderBook(){
 
- const symbol = useMarketStore(s=>s.symbol)
- const [book,setBook] = useState({buyOrders:[],sellOrders:[]})
+const symbol = useMarketStore(s=>s.symbol)
 
- useEffect(()=>{
+const [book,setBook] = useState({buyOrders:[],sellOrders:[]})
 
-  if(!symbol) return
+useEffect(()=>{
 
-  getOrderBook(symbol).then(res=>setBook(res.data))
+if(!symbol) return
 
-  disconnectSocket()
+getOrderBook(symbol).then(res=>setBook(res.data))
 
-  connectSocket(symbol,null,(data)=>setBook(data))
+},[symbol])
 
-  return ()=>disconnectSocket()
+return(
 
- },[symbol])
+<div>
 
- return(
+<h3>ORDER BOOK</h3>
 
-  <div className="text-white h-full flex flex-col">
+<table>
 
-   <div className="p-2 border-b border-gray-800 text-sm font-semibold">
-     ORDER BOOK
-   </div>
+<tbody>
 
-   <div className="flex-1 overflow-auto text-sm">
+{book.sellOrders.map((o,i)=>(
+<tr key={i} className="ask">
+<td>{o.price}</td>
+<td>{o.quantity}</td>
+</tr>
+))}
 
-     {book.sellOrders.slice(0,10).map((o,i)=>(
-      <div key={i} className="flex justify-between text-red-400 px-2 py-1">
-       <span>{o.price.toFixed(2)}</span>
-       <span>{o.quantity}</span>
-      </div>
-     ))}
+{book.buyOrders.map((o,i)=>(
+<tr key={i} className="bid">
+<td>{o.price}</td>
+<td>{o.quantity}</td>
+</tr>
+))}
 
-     {book.buyOrders.slice(0,10).map((o,i)=>(
-      <div key={i} className="flex justify-between text-green-400 px-2 py-1">
-       <span>{o.price.toFixed(2)}</span>
-       <span>{o.quantity}</span>
-      </div>
-     ))}
+</tbody>
 
-   </div>
+</table>
 
-  </div>
+</div>
 
- )
+)
 
 }

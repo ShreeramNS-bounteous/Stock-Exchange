@@ -1,41 +1,40 @@
 import { useEffect,useState } from "react"
-import axiosClient from "../../api/axios"
+import { getPortfolio } from "../../api/portfolioApi"
 
 export default function PortfolioPanel(){
 
- const [portfolio,setPortfolio] = useState([])
+const [items,setItems] = useState([])
 
- useEffect(()=>{
+useEffect(()=>{
 
-  axiosClient.get("/portfolio")
-   .then(res=>setPortfolio(res.data))
+getPortfolio().then(res=>setItems(res.data))
 
- },[])
+},[])
 
- return(
+return(
 
-  <div className="text-white h-full border-t border-gray-800">
+<div>
 
-   <div className="p-3 text-sm font-semibold border-b border-gray-800">
-     PORTFOLIO
-   </div>
+<h3>PORTFOLIO</h3>
 
-   <div className="p-2 text-sm">
+<table>
 
-    {portfolio.map(p=>(
-      <div key={p.stockSymbol} className="flex justify-between py-1">
+<tbody>
 
-        <span>{p.stockSymbol}</span>
+{items.map(p=>(
+<tr key={p.symbol}>
+<td>{p.symbol}</td>
+<td>{p.quantity}</td>
+<td>{p.pnl}</td>
+</tr>
+))}
 
-        <span>{p.quantity}</span>
+</tbody>
 
-      </div>
-    ))}
+</table>
 
-   </div>
+</div>
 
-  </div>
-
- )
+)
 
 }

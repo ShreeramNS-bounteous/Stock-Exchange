@@ -1,0 +1,165 @@
+body{
+    margin:0;
+    background:#0b0f1a;
+    font-family:Arial, Helvetica, sans-serif;
+    color:white;
+    }
+    
+    /* MAIN GRID */
+    
+    .terminal{
+    
+    display:grid;
+    
+    grid-template-columns:260px 1fr 340px;
+    grid-template-rows:420px 220px 260px;
+    
+    gap:10px;
+    
+    height:100vh;
+    padding:10px;
+    
+    }
+    
+    /* ALL PANELS */
+    
+    .markets,
+    .chart,
+    .orderpanel,
+    .orderbook,
+    .trades,
+    .portfolio,
+    .orders{
+    
+    background:#111827;
+    border-radius:8px;
+    
+    display:flex;
+    flex-direction:column;
+    
+    overflow:hidden;
+    
+    }
+    
+    /* LEFT SIDEBAR */
+    
+    .markets{
+    grid-row:1 / span 3;
+    grid-column:1;
+    }
+    
+    /* CHART */
+    
+    .chart{
+    grid-column:2;
+    grid-row:1;
+    padding:10px;
+    }
+    
+    /* BUY SELL */
+    
+    .orderpanel{
+    grid-column:3;
+    grid-row:1;
+    padding:15px;
+    }
+    
+    /* ORDERBOOK */
+    
+    .orderbook{
+    grid-column:2;
+    grid-row:2;
+    padding:10px;
+    }
+    
+    /* TRADES */
+    
+    .trades{
+    grid-column:3;
+    grid-row:2;
+    padding:10px;
+    }
+    
+    /* PORTFOLIO */
+    
+    .portfolio{
+    grid-column:3;
+    grid-row:3;
+    padding:10px;
+    }
+    
+    /* OPEN ORDERS */
+    
+    .orders{
+    grid-column:2;
+    grid-row:3;
+    padding:10px;
+    }
+    
+    /* SCROLLABLE CONTENT */
+    
+    .panel-body{
+    flex:1;
+    overflow:auto;
+    }
+    
+    /* TABLES */
+    
+    table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    }
+    
+    thead{
+    color:#9ca3af;
+    }
+    
+    td, th{
+    padding:6px;
+    border-top:1px solid #1f2937;
+    }
+    
+    /* MARKET ROW */
+    
+    .market-row{
+    display:flex;
+    justify-content:space-between;
+    padding:10px;
+    border-bottom:1px solid #1f2937;
+    cursor:pointer;
+    }
+    
+    .market-row:hover{
+    background:#1f2937;
+    }
+    
+    /* ORDERBOOK COLORS */
+    
+    .bid{
+    color:#10b981;
+    }
+    
+    .ask{
+    color:#ef4444;
+    }
+    
+    /* BUTTONS */
+    
+    .buy-btn{
+    background:#10b981;
+    padding:10px;
+    border:none;
+    color:white;
+    border-radius:6px;
+    cursor:pointer;
+    }
+    
+    .sell-btn{
+    background:#ef4444;
+    padding:10px;
+    border:none;
+    color:white;
+    border-radius:6px;
+    cursor:pointer;
+    }
