@@ -1,88 +1,81 @@
 import { useEffect, useRef } from "react"
+import { createChart, CandlestickSeries } from "lightweight-charts"
 import { getCandles } from "../api/marketApi"
 import { useMarketStore } from "../store/marketStore"
-import { subscribeTopic } from "../websocket/socket"
-import {createChart, CandlestickSeries} from "lightweight-charts"
+import { connectSocket, subscribeTopic } from "../websocket/socket"
 
 export default function TradingChart(){
 
- const containerRef = useRef(null)
- const chartRef = useRef(null)
- const candleSeriesRef = useRef(null)
+const chartRef = useRef(null)
+const containerRef = useRef(null)
+const candleSeriesRef = useRef(null)
 
-    const symbol = useMarketStore(s => s.symbol)
-    
-    let currentCandle = null
+const symbol = useMarketStore(s=>s.symbol)
 
- useEffect(()=>{
+useEffect(()=>{
 
-  if(!symbol || !containerRef.current) return
+if(!symbol || !containerRef.current) return
 
-  if(chartRef.current){
-   chartRef.current.remove()
-  }
+if(chartRef.current){
+ chartRef.current.remove()
+}
 
-  const chart = createChart(containerRef.current,{
-   width: containerRef.current.clientWidth,
-   height: 400,
-   layout:{
-    background:{color:"#0b0f1a"},
-    textColor:"#9ca3af"
-   }
-  })
+const chart = createChart(containerRef.current,{
+ width: containerRef.current.clientWidth,
+ height: containerRef.current.clientHeight,
 
-  chartRef.current = chart
+ layout:{
+  background:{color:"#0b0f1a"},
+  textColor:"#9ca3af"
+ },
 
-  const candleSeries = chart.addSeries(CandlestickSeries)
+ grid:{
+  vertLines:{color:"#1f2937"},
+  horzLines:{color:"#1f2937"}
+ }
+})
 
-  candleSeriesRef.current = candleSeries
+chartRef.current = chart
 
-  getCandles(symbol).then(res=>{
-   candleSeries.setData(res.data)
-  })
+const candleSeries = chart.addSeries(CandlestickSeries)
 
-  const subscription = subscribeTopic(
-    `/topic/trades.${symbol}`,
-    (trade)=>{
-   
-     const price = trade.price
-   
-     const bucket = Math.floor(Date.now()/60000)*60
-   
-     if(!currentCandle || currentCandle.time !== bucket){
-   
-       currentCandle = {
-         time: bucket,
-         open: price,
-         high: price,
-         low: price,
-         close: price
-       }
-   
-       candleSeries.update(currentCandle)
-   
-     } else {
-   
-       currentCandle.high = Math.max(currentCandle.high, price)
-       currentCandle.low = Math.min(currentCandle.low, price)
-       currentCandle.close = price
-   
-       candleSeries.update(currentCandle)
-     }
-   
-    })
+candleSeriesRef.current = candleSeries
 
-  return () => {
-   if(subscription) subscription.unsubscribe()
-  }
+// load initial candles
+getCandles(symbol).then(res=>{
+ candleSeries.setData(res.data)
+})
 
- },[symbol])
+// websocket connection
+connectSocket()
 
- return(
-  <div
-   ref={containerRef}
-   style={{width:"100%",height:"100%"}}
-  />
- )
+subscribeTopic(`/topic/trades/${symbol}`, trade => {
+
+ const price = trade.price
+ const time = Math.floor(Date.now()/60)
+
+ candleSeries.update({
+  time,
+  open: price,
+  high: price,
+  low: price,
+  close: price
+ })
+
+})
+
+},[symbol])
+
+return(
+
+<div
+ref={containerRef}
+style={{
+ width:"100%",
+ height:"100%"
+}}
+/>
+
+)
 
 }
