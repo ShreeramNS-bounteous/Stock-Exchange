@@ -19,10 +19,10 @@ export default function TradingChart() {
       chartRef.current = null
     }
 
-    const chart = createChart(ref.current, {
-      width: ref.current.clientWidth,
-      height: 400
-    })
+    const chart = createChart(ref.current,{
+        width:ref.current.clientWidth,
+        height:380
+        })
 
     chartRef.current = chart
 
