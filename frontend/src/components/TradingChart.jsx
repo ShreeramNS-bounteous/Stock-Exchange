@@ -1,114 +1,88 @@
 import { useEffect, useRef } from "react"
-import { createChart } from "lightweight-charts"
 import { getCandles } from "../api/marketApi"
 import { useMarketStore } from "../store/marketStore"
-import { connectSocket, subscribeSymbol, disconnectSocket } from "../websocket/socket"
+import { subscribeTopic } from "../websocket/socket"
+import {createChart, CandlestickSeries} from "lightweight-charts"
 
 export default function TradingChart(){
 
-const containerRef = useRef(null)
-const chartRef = useRef(null)
-const candleSeriesRef = useRef(null)
+ const containerRef = useRef(null)
+ const chartRef = useRef(null)
+ const candleSeriesRef = useRef(null)
 
-const symbol = useMarketStore(s => s.symbol)
+    const symbol = useMarketStore(s => s.symbol)
+    
+    let currentCandle = null
 
-useEffect(()=>{
+ useEffect(()=>{
 
-if(!symbol || !containerRef.current) return
+  if(!symbol || !containerRef.current) return
 
-// remove previous chart
-if(chartRef.current){
-chartRef.current.remove()
-}
+  if(chartRef.current){
+   chartRef.current.remove()
+  }
 
-// create chart
-const chart = createChart(containerRef.current,{
-width: containerRef.current.clientWidth,
-height: 400,
+  const chart = createChart(containerRef.current,{
+   width: containerRef.current.clientWidth,
+   height: 400,
+   layout:{
+    background:{color:"#0b0f1a"},
+    textColor:"#9ca3af"
+   }
+  })
 
-layout:{
-background:{ color:"#0b0f1a" },
-textColor:"#9ca3af"
-},
+  chartRef.current = chart
 
-grid:{
-vertLines:{ color:"#1f2937" },
-horzLines:{ color:"#1f2937" }
-},
+  const candleSeries = chart.addSeries(CandlestickSeries)
 
-rightPriceScale:{
-scaleMargins:{
-top:0.2,
-bottom:0.2
-}
-}
+  candleSeriesRef.current = candleSeries
 
-})
+  getCandles(symbol).then(res=>{
+   candleSeries.setData(res.data)
+  })
 
-chartRef.current = chart
+  const subscription = subscribeTopic(
+    `/topic/trades.${symbol}`,
+    (trade)=>{
+   
+     const price = trade.price
+   
+     const bucket = Math.floor(Date.now()/60000)*60
+   
+     if(!currentCandle || currentCandle.time !== bucket){
+   
+       currentCandle = {
+         time: bucket,
+         open: price,
+         high: price,
+         low: price,
+         close: price
+       }
+   
+       candleSeries.update(currentCandle)
+   
+     } else {
+   
+       currentCandle.high = Math.max(currentCandle.high, price)
+       currentCandle.low = Math.min(currentCandle.low, price)
+       currentCandle.close = price
+   
+       candleSeries.update(currentCandle)
+     }
+   
+    })
 
-// create candle series
-const candleSeries = chart.addCandlestickSeries()
-candleSeriesRef.current = candleSeries
+  return () => {
+   if(subscription) subscription.unsubscribe()
+  }
 
-// load initial candles
-getCandles(symbol)
-.then(res=>{
-candleSeries.setData(res.data)
-})
-.catch(err=>{
-console.error("Failed to load candles",err)
-})
+ },[symbol])
 
-// websocket connection
-connectSocket()
-
-subscribeSymbol(symbol,(trade)=>{
-
-const price = trade.price
-const time = Math.floor(Date.now()/1000)
-
-candleSeries.update({
-time,
-close:price
-})
-
-})
-
-// resize handling
-const handleResize = () => {
-chart.applyOptions({
-width: containerRef.current.clientWidth
-})
-}
-
-window.addEventListener("resize",handleResize)
-
-// cleanup
-return () => {
-
-disconnectSocket()
-
-window.removeEventListener("resize",handleResize)
-
-if(chartRef.current){
-chartRef.current.remove()
-}
-
-}
-
-},[symbol])
-
-return(
-
-<div
-ref={containerRef}
-style={{
-width:"100%",
-height:"100%"
-}}
-/>
-
-)
+ return(
+  <div
+   ref={containerRef}
+   style={{width:"100%",height:"100%"}}
+  />
+ )
 
 }

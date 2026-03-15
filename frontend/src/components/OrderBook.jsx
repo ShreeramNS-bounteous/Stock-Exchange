@@ -1,69 +1,80 @@
 import { useEffect, useState } from "react"
 import { getOrderBook } from "../api/marketApi"
 import { useMarketStore } from "../store/marketStore"
-import { connectSocket,subscribeSymbol,disconnectSocket } from "../websocket/socket"
+import { subscribeTopic } from "../websocket/socket"
 
 export default function OrderBook(){
 
-const symbol = useMarketStore(s=>s.symbol)
+ const symbol = useMarketStore(s=>s.symbol)
 
-const [book,setBook] = useState({
-buyOrders:[],
-sellOrders:[]
-})
+ const [book,setBook] = useState({
+  buyOrders:[],
+  sellOrders:[]
+ })
 
-useEffect(()=>{
+ useEffect(()=>{
 
-if(!symbol) return
+  if(!symbol) return
 
-getOrderBook(symbol).then(res=>setBook(res.data))
+  // initial orderbook
+  getOrderBook(symbol).then(res=>{
+   setBook(res.data)
+  })
 
-connectSocket()
+  const subscription = subscribeTopic(
+   `/topic/orderbook.${symbol}`,
+   (bookUpdate)=>{
+    setBook(bookUpdate)
+   }
+  )
 
-subscribeSymbol(symbol,null,(bookUpdate)=>{
+  return ()=>{
+   subscription?.unsubscribe()
+  }
 
-setBook(bookUpdate)
+ },[symbol])
 
-})
+ return(
 
-return ()=>disconnectSocket()
+  <div className="orderbook">
 
-},[symbol])
+   <table>
 
-return(
+    <thead>
+     <tr>
+      <th className="bid">Bid</th>
+      <th>Qty</th>
+      <th className="ask">Ask</th>
+      <th>Qty</th>
+     </tr>
+    </thead>
 
-<div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+    <tbody>
 
-<h3 style={{padding:"10px"}}>OrderBook</h3>
+     {book.buyOrders.map((b,i)=>(
+      <tr key={i}>
+       <td className="bid">{b.price}</td>
+       <td>{b.quantity}</td>
+       <td></td>
+       <td></td>
+      </tr>
+     ))}
 
-<div className="panel-body">
+     {book.sellOrders.map((s,i)=>(
+      <tr key={i}>
+       <td></td>
+       <td></td>
+       <td className="ask">{s.price}</td>
+       <td>{s.quantity}</td>
+      </tr>
+     ))}
 
-<table className="table">
+    </tbody>
 
-<tbody>
+   </table>
 
-{book.sellOrders.map((o,i)=>(
-<tr key={"s"+i} className="ask">
-<td>{o.price}</td>
-<td>{o.quantity}</td>
-</tr>
-))}
+  </div>
 
-{book.buyOrders.map((o,i)=>(
-<tr key={"b"+i} className="bid">
-<td>{o.price}</td>
-<td>{o.quantity}</td>
-</tr>
-))}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-)
+ )
 
 }
