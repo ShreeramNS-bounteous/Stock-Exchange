@@ -10,4 +10,4 @@ export const getTrades = (symbol) =>
 axiosClient.get(`/trades/${symbol}`)
 
 export const getCandles = (symbol) =>
-axiosClient.get(`/candles/${symbol}`)
+axiosClient.get(`/market/candles/${symbol}`)

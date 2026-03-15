@@ -14,7 +14,10 @@ export default function LoginPage(){
 
   try{
 
-   const res = await login({ email, password })
+   const res = await login({
+    email,
+    password
+   })
 
    localStorage.setItem("token",res.data.token)
 
@@ -40,7 +43,7 @@ export default function LoginPage(){
      className="auth-input"
      placeholder="Email"
      value={email}
-     onChange={e=>setEmail(e.target.value)}
+     onChange={(e)=>setEmail(e.target.value)}
     />
 
     <input
@@ -48,7 +51,7 @@ export default function LoginPage(){
      type="password"
      placeholder="Password"
      value={password}
-     onChange={e=>setPassword(e.target.value)}
+     onChange={(e)=>setPassword(e.target.value)}
     />
 
     <button
@@ -58,10 +61,9 @@ export default function LoginPage(){
      Login
     </button>
 
-    <p className="auth-footer">
+    <div className="auth-footer">
 
      Don't have an account?{" "}
-
      <span
       className="auth-link"
       onClick={()=>navigate("/register")}
@@ -69,7 +71,7 @@ export default function LoginPage(){
       Register
      </span>
 
-    </p>
+    </div>
 
    </div>
 

@@ -1,60 +1,58 @@
 import { useEffect, useState } from "react"
-import { getTrades } from "../api/marketApi"
-import { useMarketStore } from "../store/marketStore"
 import { subscribeTopic } from "../websocket/socket"
+import { useMarketStore } from "../store/marketStore"
 
-export default function TradeFeed(){
+export default function TradesFeed(){
 
-const symbol = useMarketStore(s=>s.symbol)
+ const [trades,setTrades] = useState([])
 
-const [trades,setTrades] = useState([])
+ const symbol = useMarketStore(s=>s.symbol)
 
-useEffect(()=>{
+ useEffect(()=>{
 
-if(!symbol) return
+  if(!symbol) return
 
-getTrades(symbol).then(res=>{
-setTrades(res.data)
-})
+  const subscription = subscribeTopic(
+   `/topic/trades.${symbol}`,
+   (trade)=>{
 
-const sub = subscribeTopic(`/topic/trades/${symbol}`,trade=>{
+    setTrades(prev => [trade,...prev.slice(0,20)])
 
-setTrades(prev=>[trade,...prev.slice(0,40)])
+   }
+  )
 
-})
+  return ()=>subscription?.unsubscribe()
 
-return ()=>sub?.unsubscribe()
+ },[symbol])
 
-},[symbol])
+ return(
+  <div className="trades">
 
-return(
+   <table>
 
-<div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+    <thead>
+     <tr>
+      <th>Price</th>
+      <th>Qty</th>
+      <th>Time</th>
+     </tr>
+    </thead>
 
-<h3 style={{padding:"10px"}}>Trades</h3>
+    <tbody>
 
-<div className="panel-body">
+     {trades.map((t,i)=>(
+      <tr key={i}>
+       <td>{t.price}</td>
+       <td>{t.quantity}</td>
+       <td>{t.time}</td>
+      </tr>
+     ))}
 
-<table className="table">
+    </tbody>
 
-<tbody>
+   </table>
 
-{trades.map((t,i)=>(
-<tr key={i}>
-<td>{t.price}</td>
-<td>{t.quantity}</td>
-<td>{new Date(t.timestamp).toLocaleTimeString()}</td>
-</tr>
-))}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-)
+  </div>
+ )
 
 }

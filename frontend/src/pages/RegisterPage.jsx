@@ -7,7 +7,6 @@ export default function RegisterPage(){
 
  const navigate = useNavigate()
 
- const [name,setName] = useState("")
  const [email,setEmail] = useState("")
  const [password,setPassword] = useState("")
 
@@ -15,12 +14,12 @@ export default function RegisterPage(){
 
   try{
 
-   await register({
+   const res = await register({
     email,
     password
    })
 
-   alert("Registration successful")
+   localStorage.setItem("token",res.data.token)
 
    navigate("/trade")
 
@@ -39,11 +38,12 @@ export default function RegisterPage(){
    <div className="auth-card">
 
     <h2>Register</h2>
+
     <input
      className="auth-input"
      placeholder="Email"
      value={email}
-     onChange={e=>setEmail(e.target.value)}
+     onChange={(e)=>setEmail(e.target.value)}
     />
 
     <input
@@ -51,7 +51,7 @@ export default function RegisterPage(){
      type="password"
      placeholder="Password"
      value={password}
-     onChange={e=>setPassword(e.target.value)}
+     onChange={(e)=>setPassword(e.target.value)}
     />
 
     <button
@@ -61,10 +61,9 @@ export default function RegisterPage(){
      Register
     </button>
 
-    <p className="auth-footer">
+    <div className="auth-footer">
 
      Already have an account?{" "}
-
      <span
       className="auth-link"
       onClick={()=>navigate("/login")}
@@ -72,7 +71,7 @@ export default function RegisterPage(){
       Login
      </span>
 
-    </p>
+    </div>
 
    </div>
 
