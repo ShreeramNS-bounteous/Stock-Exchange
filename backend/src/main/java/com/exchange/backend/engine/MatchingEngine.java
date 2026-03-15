@@ -139,7 +139,15 @@ public class MatchingEngine {
     private void executeTrade(Order buyOrder, Order sellOrder) {
 
         if (buyOrder.getUserId().equals(sellOrder.getUserId())) {
+
             System.out.println("Self trade prevented");
+
+            // remove SELL order from book to break deadlock
+            orderBook.getSellOrders(sellOrder.getStockSymbol()).poll();
+
+            sellOrder.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(sellOrder);
+
             return;
         }
 
