@@ -1,12 +1,11 @@
 import { useEffect,useState } from "react"
 import { getTrades } from "../../api/marketApi"
 import { useMarketStore } from "../../store/marketStore"
-import { connectSocket } from "../../websocket/socket"
+import { connectSocket, disconnectSocket } from "../../websocket/socket"
 
 export default function TradeFeed(){
 
  const symbol = useMarketStore(s=>s.symbol)
-
  const [trades,setTrades] = useState([])
 
  useEffect(()=>{
@@ -15,11 +14,15 @@ export default function TradeFeed(){
 
   getTrades(symbol).then(res=>setTrades(res.data))
 
+  disconnectSocket()
+
   connectSocket(symbol,(trade)=>{
 
    setTrades(prev=>[trade,...prev.slice(0,40)])
 
   })
+
+  return ()=>disconnectSocket()
 
  },[symbol])
 

@@ -63,7 +63,9 @@ public class OrderSimulatorService {
 
                         Thread.sleep(800 + random.nextInt(800));
 
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        System.out.println("Simulator error: " + e.getMessage());
+                    }
 
                 }
 
