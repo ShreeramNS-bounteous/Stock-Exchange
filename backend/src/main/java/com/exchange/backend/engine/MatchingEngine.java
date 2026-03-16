@@ -137,16 +137,25 @@ public class MatchingEngine {
      * Trade execution logic
      */
     private void executeTrade(Order buyOrder, Order sellOrder) {
-
         if (buyOrder.getUserId().equals(sellOrder.getUserId())) {
 
             System.out.println("Self trade prevented");
 
-            // remove SELL order from book to break deadlock
-            orderBook.getSellOrders(sellOrder.getStockSymbol()).poll();
+            // remove whichever order is at top of its queue
+            if (orderBook.getSellOrders(sellOrder.getStockSymbol()).peek() == sellOrder) {
 
-            sellOrder.setStatus(OrderStatus.CANCELLED);
-            orderRepository.save(sellOrder);
+                orderBook.getSellOrders(sellOrder.getStockSymbol()).poll();
+
+                sellOrder.setStatus(OrderStatus.CANCELLED);
+                orderRepository.save(sellOrder);
+
+            } else {
+
+                orderBook.getBuyOrders(buyOrder.getStockSymbol()).poll();
+
+                buyOrder.setStatus(OrderStatus.CANCELLED);
+                orderRepository.save(buyOrder);
+            }
 
             return;
         }

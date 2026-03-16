@@ -52,7 +52,7 @@ connectSocket()
 subscribeTopic(`/topic/trades/${symbol}`, trade => {
 
  const price = trade.price
- const time = Math.floor(Date.now()/60)
+ const time = Math.floor(Date.now() / 1000)
 
  candleSeries.update({
   time,

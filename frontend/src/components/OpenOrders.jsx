@@ -48,7 +48,21 @@ return(
 
 <tbody>
 
-{orders.map(o=>(
+{orders.length === 0 ? (
+
+<tr>
+<td colSpan="6" style={{
+textAlign:"center",
+padding:"20px",
+color:"#9ca3af"
+}}>
+No open orders yet. Place a trade to see orders here.
+</td>
+</tr>
+
+) : (
+
+orders.map(o=>(
 <tr key={o.id}>
 <td>{o.symbol}</td>
 <td>{o.side}</td>
@@ -70,7 +84,9 @@ Cancel
 </button>
 </td>
 </tr>
-))}
+))
+
+)}
 
 </tbody>
 

@@ -16,7 +16,6 @@ export default function OrderBook(){
 
   if(!symbol) return
 
-  // initial orderbook
   getOrderBook(symbol).then(res=>{
    setBook(res.data)
   })
@@ -33,6 +32,22 @@ export default function OrderBook(){
   }
 
  },[symbol])
+
+ if(book.buyOrders.length === 0 && book.sellOrders.length === 0){
+
+  return(
+   <div className="orderbook">
+    <div style={{
+     padding:"20px",
+     textAlign:"center",
+     color:"#9ca3af"
+    }}>
+     No orders in book yet.
+    </div>
+   </div>
+  )
+
+ }
 
  return(
 
