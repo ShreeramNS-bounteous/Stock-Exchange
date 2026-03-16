@@ -33,13 +33,29 @@ return(
 
 <tbody>
 
-{items.map((p,i)=>(
+{items.length === 0 ? (
+
+<tr>
+<td colSpan="3" style={{
+textAlign:"center",
+padding:"20px",
+color:"#9ca3af"
+}}>
+No holdings yet. Start trading to build your portfolio.
+</td>
+</tr>
+
+) : (
+
+items.map((p,i)=>(
 <tr key={i}>
 <td>{p.symbol}</td>
 <td>{p.quantity}</td>
 <td>{p.pnl}</td>
 </tr>
-))}
+))
+
+)}
 
 </tbody>
 
